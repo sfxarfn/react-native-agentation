@@ -8,9 +8,25 @@ Inspector + annotations + markdown export. No MCP server.
 
 ## Install
 
+Not on npm yet — install from GitHub, pinned to a tag:
+
 ```sh
-npm install react-native-agentation -D
+npm install -D github:sfxarfn/react-native-agentation#0.0.8
+# yarn
+yarn add -D sfxarfn/react-native-agentation#0.0.8
 ```
+
+`main` is `src/index.ts`, so Metro compiles the TypeScript with your app's Babel
+config — nothing is prebuilt. There is no native module and nothing to autolink,
+so no Gradle edits and no `pod install`.
+
+A dev dependency is the right place for it, with one caveat: it must still be
+installed when you bundle. Metro resolves from `node_modules` and ignores which
+`package.json` section a package sits in, so a production-only install
+(`yarn --production`, `npm ci --omit=dev`) fails the release bundle with
+`Unable to resolve module react-native-agentation`. That's a build error, not a
+shipped crash — but if your CI installs that way, put it in `dependencies`
+instead. It costs about a kilobyte in release.
 
 ## Use
 
