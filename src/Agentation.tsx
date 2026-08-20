@@ -310,11 +310,13 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
               ) : (
                 <Image source={require('./icons/copy.png')} style={styles.icon} />
               )}
-              <Text style={styles.count}>{annotations.length}</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{annotations.length}</Text>
+              </View>
             </Pressable>
             <View style={styles.divider} />
           </Animated.View>
-          {/* Blue while the session is live, faded up from the bar's own black. */}
+          {/* Lifts out of the bar's own black once the session is live. */}
           <Pressable
             onPress={() => {
               setActive(false);
@@ -327,7 +329,7 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
                 {
                   backgroundColor: arm.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['rgb(24, 24, 24)', 'rgb(20, 120, 255)'],
+                    outputRange: ['rgb(24, 24, 24)', 'rgb(58, 58, 60)'],
                   }),
                 },
               ]}>
@@ -336,9 +338,16 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
           </Pressable>
         </View>
       ) : (
-        <Pressable style={styles.toggle} onPress={() => setActive(true)}>
-          <Image source={require('./icons/logo.png')} style={styles.icon} />
-        </Pressable>
+        <View style={styles.toggleWrap}>
+          <Pressable style={styles.toggle} onPress={() => setActive(true)}>
+            <Image source={require('./icons/logo.png')} style={styles.icon} />
+          </Pressable>
+          {annotations.length > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{annotations.length}</Text>
+            </View>
+          )}
+        </View>
       )}
     </View>
   );
@@ -460,14 +469,26 @@ const styles = StyleSheet.create({
   copied: {color: '#30d158'},
   close: {borderRadius: 22},
   icon: {width: 22, height: 22},
-  count: {position: 'absolute', top: 6, right: 4, color: '#8e8e93', fontSize: 11},
+  // Blue is reserved for "you have this many notes".
+  badge: {
+    ...SHADOW,
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 5,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgb(20, 120, 255)',
+  },
+  badgeText: {color: '#fff', fontSize: 12, fontWeight: '700'},
   divider: {width: 1, height: 20, marginHorizontal: 4, backgroundColor: '#3a3a3c'},
+  toggleWrap: {position: 'absolute', right: 16, bottom: 48},
   // Same height as the expanded bar, so arming it does not shift the row.
   toggle: {
     ...SHADOW,
-    position: 'absolute',
-    right: 16,
-    bottom: 48,
     width: 56,
     height: 56,
     borderRadius: 28,
