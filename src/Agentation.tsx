@@ -1,20 +1,18 @@
 import * as React from 'react';
 import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 // Deep import: `react-native`'s barrel logs a deprecation warning for Clipboard,
 // and the community module is not worth a dependency for one setString call.
 import Clipboard from 'react-native/Libraries/Components/Clipboard/Clipboard';
 
-import {appFrames, formatFeedback, formatFrame, type Annotation} from './format';
+import {formatFeedback, type Annotation} from './format';
 import {inspectAtPoint, type Inspection} from './inspect';
 
 export type AgentationProps = {
@@ -30,6 +28,17 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
   const [comment, setComment] = React.useState('');
   const [annotations, setAnnotations] = React.useState<Annotation[]>([]);
   const [copied, setCopied] = React.useState(false);
+  const [keyboard, setKeyboard] = React.useState(0);
+  const window = useWindowDimensions();
+
+  React.useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e => setKeyboard(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const onTap = (x: number, y: number) => {
     inspectAtPoint(rootRef.current, x, y).then(inspection => {
@@ -52,12 +61,23 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
   };
 
   const copy = () => {
-    const {width, height} = Dimensions.get('window');
-    Clipboard.setString(formatFeedback(annotations, {width, height}));
+    Clipboard.setString(formatFeedback(annotations, window));
     setCopied(true);
   };
 
-  const frames = hit ? appFrames(hit.stack) : [];
+  // Sit under the element, or over it when the element is too close to the
+  // bottom — the keyboard, once up, is part of "the bottom".
+  const bubble = hit && {
+    top:
+      hit.frame.top + hit.frame.height + GAP + BUBBLE_HEIGHT <= window.height - keyboard - GAP
+        ? hit.frame.top + hit.frame.height + GAP
+        : Math.max(GAP, hit.frame.top - GAP - BUBBLE_HEIGHT),
+    left: Math.min(
+      Math.max(GAP, hit.frame.left),
+      Math.max(GAP, window.width - GAP - Math.min(BUBBLE_WIDTH, window.width - GAP * 2)),
+    ),
+    width: Math.min(BUBBLE_WIDTH, window.width - GAP * 2),
+  };
 
   return (
     <View style={styles.root}>
@@ -92,47 +112,25 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
         />
       )}
 
-      {active && hit && (
-        <KeyboardAvoidingView
-          style={styles.panelWrap}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.panel}>
-            <Text style={styles.breadcrumb} numberOfLines={2}>
-              {hit.hierarchy.join(' › ')}
-            </Text>
-            <ScrollView style={styles.frames}>
-              {frames.length === 0 ? (
-                <Text style={styles.dim}>
-                  No source frames. Run a dev build with Metro attached.
-                </Text>
-              ) : (
-                frames.map((frame, i) => (
-                  <Text key={i} style={i === 0 ? styles.frameTop : styles.frame}>
-                    {formatFrame(frame)}
-                  </Text>
-                ))
-              )}
-            </ScrollView>
-            <View style={styles.commentRow}>
-              <TextInput
-                style={styles.input}
-                value={comment}
-                onChangeText={setComment}
-                placeholder="What should change here?"
-                placeholderTextColor="#777"
-                autoFocus
-                multiline
-                onSubmitEditing={save}
-              />
-              <Pressable style={styles.save} onPress={save}>
-                <Text style={styles.saveText}>Save</Text>
-              </Pressable>
-              <Pressable style={styles.cancel} onPress={() => setHit(null)}>
-                <Text style={styles.dim}>✕</Text>
-              </Pressable>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+      {active && hit && bubble && (
+        <View style={[styles.bubble, bubble]}>
+          <TextInput
+            style={styles.input}
+            value={comment}
+            onChangeText={setComment}
+            placeholder="What should change here?"
+            placeholderTextColor="#777"
+            autoFocus
+            multiline
+            onSubmitEditing={save}
+          />
+          <Pressable style={styles.save} onPress={save}>
+            <Text style={styles.saveText}>Save</Text>
+          </Pressable>
+          <Pressable style={styles.cancel} onPress={() => setHit(null)}>
+            <Text style={styles.dim}>✕</Text>
+          </Pressable>
+        </View>
       )}
 
       <View style={styles.fabs}>
@@ -166,6 +164,10 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
   );
 }
 
+const GAP = 8;
+const BUBBLE_WIDTH = 340;
+const BUBBLE_HEIGHT = 54;
+
 const styles = StyleSheet.create({
   root: {flex: 1},
   highlight: {
@@ -174,19 +176,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgb(100, 160, 255)',
   },
-  panelWrap: {position: 'absolute', left: 0, right: 0, bottom: 0},
-  panel: {
-    maxHeight: 280,
-    padding: 12,
-    paddingBottom: 32,
+  bubble: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 8,
+    borderRadius: 12,
     backgroundColor: 'rgba(17, 17, 17, 0.95)',
   },
-  breadcrumb: {color: '#888', fontSize: 11, marginBottom: 6},
-  frames: {flexGrow: 0},
-  frame: {color: '#bbb', fontSize: 12, fontFamily: 'Menlo', marginBottom: 2},
-  frameTop: {color: '#fff', fontSize: 12, fontFamily: 'Menlo', marginBottom: 2},
   dim: {color: '#888', fontSize: 12},
-  commentRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: 10},
   input: {
     flex: 1,
     minHeight: 38,

@@ -32,16 +32,7 @@ Tap `◎` bottom-right to arm it, then tap any element. Type what should change,
 
 ## What you get
 
-Tapping an element:
-
-```
-LoginScreen › View › Card › Pressable › Text
-Text        src/components/Card.tsx:41
-Card        src/screens/Login.tsx:88
-LoginScreen src/screens/Login.tsx:12
-```
-
-Copying the feedback:
+Tapping an element highlights it and floats a comment box beside it — below, or above when the element sits near the bottom. Copying:
 
 ```md
 ## Screen Feedback
