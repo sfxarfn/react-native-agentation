@@ -124,12 +124,14 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
             multiline
             onSubmitEditing={save}
           />
-          <Pressable style={styles.save} onPress={save}>
-            <Text style={styles.saveText}>Save</Text>
-          </Pressable>
-          <Pressable style={styles.cancel} onPress={() => setHit(null)}>
-            <Text style={styles.dim}>✕</Text>
-          </Pressable>
+          <View style={styles.buttons}>
+            <Pressable style={styles.cancel} onPress={() => setHit(null)}>
+              <Text style={styles.dim}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.save} onPress={save}>
+              <Text style={styles.saveText}>Save</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -166,7 +168,7 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
 
 const GAP = 8;
 const BUBBLE_WIDTH = 340;
-const BUBBLE_HEIGHT = 54;
+const BUBBLE_HEIGHT = 96;
 
 const styles = StyleSheet.create({
   root: {flex: 1},
@@ -178,15 +180,13 @@ const styles = StyleSheet.create({
   },
   bubble: {
     position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     padding: 8,
     borderRadius: 12,
     backgroundColor: 'rgba(17, 17, 17, 0.95)',
   },
   dim: {color: '#888', fontSize: 12},
+  buttons: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8},
   input: {
-    flex: 1,
     minHeight: 38,
     maxHeight: 90,
     paddingHorizontal: 10,
@@ -198,15 +198,15 @@ const styles = StyleSheet.create({
   },
   save: {
     marginLeft: 8,
-    paddingHorizontal: 14,
-    height: 38,
+    paddingHorizontal: 16,
+    height: 34,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgb(100, 160, 255)',
   },
   saveText: {color: '#000', fontSize: 13, fontWeight: '600'},
-  cancel: {marginLeft: 4, width: 30, height: 38, alignItems: 'center', justifyContent: 'center'},
+  cancel: {paddingHorizontal: 12, height: 34, alignItems: 'center', justifyContent: 'center'},
   fabs: {position: 'absolute', right: 16, bottom: 48, alignItems: 'flex-end'},
   action: {
     marginBottom: 8,
