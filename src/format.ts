@@ -47,8 +47,10 @@ export function formatFrame(frame: Frame): string {
 
 export type Annotation = {
   hierarchy: string[];
-  /** Where the element sat when annotated, for the on-screen pin. */
+  /** Where the element sat when annotated, for re-opening it. */
   frame?: {left: number; top: number; width: number; height: number};
+  /** The tap itself — where the pin sits, so pins on one element do not stack. */
+  point?: {x: number; y: number};
   props: Record<string, unknown>;
   stack: Frame[];
   comment: string;
