@@ -28,7 +28,7 @@ export default function App() {
 }
 ```
 
-Tap `◎` bottom-right to arm it, then tap any element. Tap elsewhere to select something else; tap the selection again to climb to its parent. Type what should change, **Add**. The button expands into a toolbar: **⧉** copies the markdown below to the clipboard, ready to paste into an agent (long-press to clear), **✕** disarms. Outside `__DEV__` the component renders its children and nothing else.
+Tap `◎` bottom-right to arm it, then tap any element. Tap elsewhere to select something else; tap the selection again to climb to its parent. Type what should change, **Add** — a numbered pin drops on the element. Tap a pin to edit or delete that note. The button expands into a toolbar: **⧉** copies the markdown below to the clipboard, ready to paste into an agent (long-press to clear), **✕** disarms. Outside `__DEV__` the component renders its children and nothing else.
 
 ## What you get
 

@@ -47,6 +47,8 @@ export function formatFrame(frame: Frame): string {
 
 export type Annotation = {
   hierarchy: string[];
+  /** Where the element sat when annotated, for the on-screen pin. */
+  frame?: {left: number; top: number; width: number; height: number};
   props: Record<string, unknown>;
   stack: Frame[];
   comment: string;

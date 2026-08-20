@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  Animated,
   Image,
   Keyboard,
   Pressable,
@@ -33,6 +34,8 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
   const [copied, setCopied] = React.useState(false);
   const [keyboard, setKeyboard] = React.useState(0);
   const [expanded, setExpanded] = React.useState(false);
+  const [editing, setEditing] = React.useState<number | null>(null);
+  const grow = React.useRef(new Animated.Value(0)).current;
   const [height, setHeight] = React.useState(BUBBLE_HEIGHT);
   const window = useWindowDimensions();
 
@@ -48,6 +51,15 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
   // Tapping the selection again climbs to its parent; tapping anywhere else
   // picks that element instead. The comment survives a climb — same intent,
   // bigger target — but not a jump to an unrelated element.
+  React.useEffect(() => {
+    Animated.timing(grow, {
+      toValue: annotations.length > 0 ? 1 : 0,
+      duration: 180,
+      // Width is not a native-driver prop.
+      useNativeDriver: false,
+    }).start();
+  }, [annotations.length, grow]);
+
   const onTap = (x: number, y: number) => {
     if (hit && inside(hit.frame, x, y)) {
       selectAncestor(hit).then(setHit);
@@ -56,25 +68,59 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
     inspectAtPoint(rootRef.current, x, y).then(inspection => {
       if (!inspection) return;
       setHit(inspection);
+      setEditing(null);
       setComment('');
       onInspect?.(inspection);
     });
   };
 
+  // Reopen a saved annotation: its own frame, props and stack stand in for a
+  // fresh hit, so the bubble needs no second code path. `items` is empty, so
+  // climbing to a parent is off until it is re-tapped on screen.
+  const edit = (index: number) => {
+    const annotation = annotations[index];
+    if (!annotation?.frame) return;
+    setEditing(index);
+    setComment(annotation.comment);
+    setHit({
+      frame: annotation.frame,
+      props: annotation.props,
+      hierarchy: annotation.hierarchy,
+      selectedIndex: annotation.hierarchy.length - 1,
+      stack: annotation.stack,
+      items: [],
+    });
+  };
+
+  const close = () => {
+    setHit(null);
+    setEditing(null);
+    setComment('');
+  };
+
+  const remove = () => {
+    if (editing == null) return;
+    setAnnotations(annotations.filter((_, i) => i !== editing));
+    setCopied(false);
+    close();
+  };
+
   const save = () => {
     if (!hit || comment.trim() === '') return;
-    setAnnotations([
-      ...annotations,
-      {
-        hierarchy: hit.hierarchy.slice(0, (hit.selectedIndex ?? hit.hierarchy.length - 1) + 1),
-        props: hit.props,
-        stack: hit.stack,
-        comment: comment.trim(),
-      },
-    ]);
-    setHit(null);
-    setComment('');
+    const annotation = {
+      hierarchy: hit.hierarchy.slice(0, (hit.selectedIndex ?? hit.hierarchy.length - 1) + 1),
+      frame: hit.frame,
+      props: hit.props,
+      stack: hit.stack,
+      comment: comment.trim(),
+    };
+    setAnnotations(
+      editing == null
+        ? [...annotations, annotation]
+        : annotations.map((existing, i) => (i === editing ? annotation : existing)),
+    );
     setCopied(false);
+    close();
   };
 
   const copy = () => {
@@ -137,6 +183,25 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
         />
       )}
 
+      {active &&
+        annotations.map(
+          (annotation, i) =>
+            annotation.frame && (
+              <Pressable
+                key={i}
+                onPress={() => edit(i)}
+                style={[
+                  styles.pin,
+                  {
+                    left: annotation.frame.left + annotation.frame.width / 2 - PIN / 2,
+                    top: annotation.frame.top + annotation.frame.height / 2 - PIN / 2,
+                  },
+                ]}>
+                <Text style={styles.pinText}>{i + 1}</Text>
+              </Pressable>
+            ),
+        )}
+
       {active && hit && bubble && (
         <View
           style={[styles.bubble, bubble]}
@@ -174,11 +239,16 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
             onSubmitEditing={save}
           />
           <View style={styles.buttons}>
-            <Pressable style={styles.cancel} onPress={() => setHit(null)}>
+            {editing != null && (
+              <Pressable style={styles.delete} onPress={remove}>
+                <Image source={require('./icons/trash.png')} style={styles.icon} />
+              </Pressable>
+            )}
+            <Pressable style={styles.cancel} onPress={close}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.save} onPress={save}>
-              <Text style={styles.saveText}>Add</Text>
+              <Text style={styles.saveText}>{editing == null ? 'Add' : 'Save'}</Text>
             </Pressable>
           </View>
         </View>
@@ -186,28 +256,34 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
 
       {active ? (
         <View style={styles.bar}>
-          {/* Room for the rest of the toolbar — layers, visibility, settings —
-              once there is anything to put there. */}
-          <Pressable
-            style={[styles.tool, annotations.length === 0 && styles.toolOff]}
-            onPress={copy}
-            onLongPress={() => {
-              setAnnotations([]);
-              setCopied(false);
-            }}>
-            {copied ? (
-              <Text style={styles.toolText}>✓</Text>
-            ) : (
-              <Image source={require('./icons/copy.png')} style={styles.icon} />
-            )}
-            {annotations.length > 0 && <Text style={styles.count}>{annotations.length}</Text>}
-          </Pressable>
-          <View style={styles.divider} />
+          {/* Copy only exists once there is feedback to copy; the bar widens
+              into it. Room here for the rest of the toolbar later. */}
+          <Animated.View
+            style={[
+              styles.grow,
+              {opacity: grow, width: grow.interpolate({inputRange: [0, 1], outputRange: [0, COPY_WIDTH]})},
+            ]}>
+            <Pressable
+              style={styles.tool}
+              onPress={copy}
+              onLongPress={() => {
+                setAnnotations([]);
+                setCopied(false);
+              }}>
+              {copied ? (
+                <Text style={styles.toolText}>✓</Text>
+              ) : (
+                <Image source={require('./icons/copy.png')} style={styles.icon} />
+              )}
+              <Text style={styles.count}>{annotations.length}</Text>
+            </Pressable>
+            <View style={styles.divider} />
+          </Animated.View>
           <Pressable
             style={styles.tool}
             onPress={() => {
               setActive(false);
-              setHit(null);
+              close();
             }}>
             <Text style={styles.toolText}>✕</Text>
           </Pressable>
@@ -234,6 +310,8 @@ function inside(
   );
 }
 
+const PIN = 28;
+const COPY_WIDTH = 53; // 44pt button + 1pt divider + its 8pt of margin
 const GAP = 8;
 const BUBBLE_WIDTH = 340;
 const BUBBLE_HEIGHT = 132;
@@ -261,6 +339,7 @@ const styles = StyleSheet.create({
   codeKey: {color: '#c586c0'},
   dim: {color: '#8e8e93', fontSize: 12},
   buttons: {flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 12},
+  delete: {marginRight: 'auto', width: 40, height: 40, alignItems: 'center', justifyContent: 'center'},
   input: {
     minHeight: 60,
     maxHeight: 120,
@@ -285,6 +364,17 @@ const styles = StyleSheet.create({
   saveText: {color: '#fff', fontSize: 15, fontWeight: '600'},
   cancel: {paddingHorizontal: 14, height: 40, alignItems: 'center', justifyContent: 'center'},
   cancelText: {color: '#d1d1d6', fontSize: 15},
+  pin: {
+    position: 'absolute',
+    width: PIN,
+    height: PIN,
+    borderRadius: PIN / 2,
+    borderBottomLeftRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgb(20, 120, 255)',
+  },
+  pinText: {color: '#fff', fontSize: 13, fontWeight: '700'},
   bar: {
     position: 'absolute',
     right: 16,
@@ -296,22 +386,23 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: 'rgba(24, 24, 24, 0.98)',
   },
+  grow: {flexDirection: 'row', alignItems: 'center', overflow: 'hidden'},
   tool: {alignItems: 'center', justifyContent: 'center', width: 44, height: 44},
-  toolOff: {opacity: 0.35},
   toolText: {color: '#e5e5ea', fontSize: 18},
   icon: {width: 22, height: 22},
   count: {position: 'absolute', top: 6, right: 4, color: '#8e8e93', fontSize: 11},
   divider: {width: 1, height: 20, marginHorizontal: 4, backgroundColor: '#3a3a3c'},
+  // Same height as the expanded bar, so arming it does not shift the row.
   toggle: {
     position: 'absolute',
     right: 16,
     bottom: 48,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(17, 17, 17, 0.9)',
+    backgroundColor: 'rgba(24, 24, 24, 0.98)',
   },
 });
 
