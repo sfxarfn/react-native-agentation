@@ -93,3 +93,18 @@ test('formatFeedback is the agent prompt', () => {
     ].join('\n'),
   );
 });
+
+test('source is the selected component frame, not always the leaf', () => {
+  const md = formatFeedback(
+    [
+      {
+        hierarchy: ['App', 'ListingResult'],
+        props: {},
+        stack: [frame('/p/src/Svg.tsx', {name: 'Svg', line: 48}), frame('/p/src/List.tsx', {name: 'ListingResult', line: 90})],
+        comment: 'wrong spacing',
+      },
+    ],
+    {width: 100, height: 100},
+  );
+  assert.match(md, /\*\*Source:\*\* \/p\/src\/List\.tsx:90/);
+});

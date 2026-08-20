@@ -88,7 +88,9 @@ export function formatFeedback(
     const {hierarchy, props, stack, comment} = annotation;
     const kind = hierarchy[hierarchy.length - 1] ?? 'element';
     const preview = previewText(props);
-    const source = appFrames(stack)[0];
+    // The frame that declares the selected component, else the leaf's.
+    const frames = appFrames(stack);
+    const source = frames.find(f => f.name === kind) ?? frames[0];
 
     lines.push('', `### ${i + 1}. ${kind}${preview == null ? '' : `: ${JSON.stringify(preview)}`}`);
     lines.push(`**Location:** ${hierarchy.join(' › ')}`);

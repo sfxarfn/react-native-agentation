@@ -28,7 +28,7 @@ export default function App() {
 }
 ```
 
-Tap `◎` bottom-right to arm it, then tap any element. Type what should change, **Save**. The button expands into **⧉ Copy feedback (n)** — that puts the markdown below on the clipboard, ready to paste into an agent. Outside `__DEV__` the component renders its children and nothing else.
+Tap `◎` bottom-right to arm it, then tap any element. Tap elsewhere to select something else; tap the selection again to climb to its parent. Type what should change, **Add**. The button expands into a toolbar: **⧉** copies the markdown below to the clipboard, ready to paste into an agent (long-press to clear), **✕** disarms. Outside `__DEV__` the component renders its children and nothing else.
 
 ## What you get
 
@@ -54,9 +54,10 @@ Programmatically:
 
 | Export | |
 |---|---|
-| `<Agentation onInspect?>` | Overlay, comment field, copy button. Wrap your app. |
+| `<Agentation onInspect?>` | Overlay, comment box, toolbar. Wrap your app. |
 | `inspectAtPoint(root, x, y)` | `Promise<Inspection \| null>`. `root` is a host instance enclosing the point; coordinates are relative to it. |
 | `isAvailable()` | Whether a renderer exposing inspector data is attached. |
+| `selectAncestor(inspection)` | `Promise<Inspection>` re-measured one level up the hierarchy. |
 | `formatFeedback(annotations, viewport)` | The markdown above, if you want to build your own UI. |
 | `appFrames`, `formatFrame`, `shortPath`, `previewText` | Stack filtering/formatting helpers. |
 

@@ -1,7 +1,26 @@
+import {findNodeHandle} from 'react-native';
 import parseErrorStack from 'react-native/Libraries/Core/Devtools/parseErrorStack';
 import symbolicateStackTrace from 'react-native/Libraries/Core/Devtools/symbolicateStackTrace';
 
 import type {Frame} from './format';
+
+/** One rung of the renderer's hierarchy, root first. Can re-measure itself. */
+type HierarchyItem = {
+  name?: string | null;
+  getInspectorData: (find: typeof findNodeHandle) => {
+    measure: (
+      callback: (
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        left: number,
+        top: number,
+      ) => void,
+    ) => void;
+    props: Record<string, unknown>;
+  };
+};
 
 export type Inspection = {
   /** Screen-space box of the touched host view. */
@@ -14,6 +33,8 @@ export type Inspection = {
   selectedIndex: number | null;
   /** Symbolicated owner stack, leaf first. Empty outside Metro. */
   stack: Frame[];
+  /** Backing hierarchy, so `selectAncestor` can re-measure a parent. */
+  items: HierarchyItem[];
 };
 
 type Renderer = {
@@ -105,7 +126,34 @@ export async function inspectAtPoint(
     frame: data.frame ?? {left: 0, top: 0, width: 0, height: 0},
     props: data.props ?? {},
     hierarchy: (data.hierarchy ?? []).map((item: any) => item?.name ?? '?'),
+    items: data.hierarchy ?? [],
     selectedIndex: data.selectedIndex ?? null,
     stack: await symbolicate(data.componentStack ?? ''),
   };
+}
+
+/**
+ * Same tap, one level up: re-measure the selected element's parent.
+ * Returns the inspection unchanged once there is nothing left to climb.
+ */
+export function selectAncestor(inspection: Inspection): Promise<Inspection> {
+  const index = (inspection.selectedIndex ?? inspection.hierarchy.length - 1) - 1;
+  const item = inspection.items[index];
+  if (!item) return Promise.resolve(inspection);
+
+  const {measure, props} = item.getInspectorData(findNodeHandle);
+  return new Promise(resolve => {
+    let settled = false;
+    const done = (value: Inspection) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    measure((x, y, width, height, left, top) =>
+      done({...inspection, selectedIndex: index, props, frame: {left, top, width, height}}),
+    );
+    // measure never calls back for a view that has since unmounted.
+    setTimeout(() => done(inspection), HIT_TEST_TIMEOUT_MS);
+  });
 }

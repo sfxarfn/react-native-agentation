@@ -1,5 +1,5 @@
 export {Agentation, type AgentationProps} from './Agentation';
-export {inspectAtPoint, isAvailable, type Inspection} from './inspect';
+export {inspectAtPoint, isAvailable, selectAncestor, type Inspection} from './inspect';
 export {
   appFrames,
   formatFeedback,
