@@ -310,6 +310,15 @@ function inside(
   );
 }
 
+// iOS reads shadow*, Android reads elevation; both are needed.
+const SHADOW = {
+  shadowColor: '#000',
+  shadowOffset: {width: 0, height: 4},
+  shadowOpacity: 0.35,
+  shadowRadius: 12,
+  elevation: 8,
+} as const;
+
 const PIN = 28;
 const COPY_WIDTH = 53; // 44pt button + 1pt divider + its 8pt of margin
 const GAP = 8;
@@ -325,6 +334,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgb(100, 160, 255)',
   },
   bubble: {
+    ...SHADOW,
     position: 'absolute',
     padding: 12,
     borderRadius: 16,
@@ -365,6 +375,7 @@ const styles = StyleSheet.create({
   cancel: {paddingHorizontal: 14, height: 40, alignItems: 'center', justifyContent: 'center'},
   cancelText: {color: '#d1d1d6', fontSize: 15},
   pin: {
+    ...SHADOW,
     position: 'absolute',
     width: PIN,
     height: PIN,
@@ -376,6 +387,7 @@ const styles = StyleSheet.create({
   },
   pinText: {color: '#fff', fontSize: 13, fontWeight: '700'},
   bar: {
+    ...SHADOW,
     position: 'absolute',
     right: 16,
     bottom: 48,
@@ -394,6 +406,7 @@ const styles = StyleSheet.create({
   divider: {width: 1, height: 20, marginHorizontal: 4, backgroundColor: '#3a3a3c'},
   // Same height as the expanded bar, so arming it does not shift the row.
   toggle: {
+    ...SHADOW,
     position: 'absolute',
     right: 16,
     bottom: 48,
