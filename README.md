@@ -4,7 +4,7 @@ Tap anything in your running app, get the component name and the **source file a
 
 Port of [agentation](https://github.com/benjitaylor/agentation) to React Native. The web version hands agents CSS selectors; React Native has no DOM, so this hands them `file:line` — which is what an agent actually wants anyway.
 
-Currently just the inspector. No annotations, no markdown export, no MCP server.
+Inspector + annotations + markdown export. No MCP server.
 
 ## Install
 
@@ -28,15 +28,29 @@ export default function App() {
 }
 ```
 
-Tap `◎` bottom-right to arm it, then tap any element. Outside `__DEV__` the component renders its children and nothing else.
+Tap `◎` bottom-right to arm it, then tap any element. Type what should change, **Save**. The button expands into **⧉ Copy feedback (n)** — that puts the markdown below on the clipboard, ready to paste into an agent. Outside `__DEV__` the component renders its children and nothing else.
 
 ## What you get
+
+Tapping an element:
 
 ```
 LoginScreen › View › Card › Pressable › Text
 Text        src/components/Card.tsx:41
 Card        src/screens/Login.tsx:88
 LoginScreen src/screens/Login.tsx:12
+```
+
+Copying the feedback:
+
+```md
+## Screen Feedback
+**Viewport:** 393×852
+
+### 1. Text: "Ask me any property questions"
+**Location:** App › HomeLanding › Pressable › Text
+**Source:** src/screens/Home.tsx:60
+**Feedback:** this one needs to be centered
 ```
 
 Programmatically:
@@ -49,10 +63,11 @@ Programmatically:
 
 | Export | |
 |---|---|
-| `<Agentation onInspect?>` | Overlay + toggle. Wrap your app. |
+| `<Agentation onInspect?>` | Overlay, comment field, copy button. Wrap your app. |
 | `inspectAtPoint(root, x, y)` | `Promise<Inspection \| null>`. `root` is a host instance enclosing the point; coordinates are relative to it. |
 | `isAvailable()` | Whether a renderer exposing inspector data is attached. |
-| `appFrames`, `formatFrame`, `shortPath` | Stack filtering/formatting helpers. |
+| `formatFeedback(annotations, viewport)` | The markdown above, if you want to build your own UI. |
+| `appFrames`, `formatFrame`, `shortPath`, `previewText` | Stack filtering/formatting helpers. |
 
 ## How it works
 

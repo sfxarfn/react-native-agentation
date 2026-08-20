@@ -18,3 +18,8 @@ declare module 'react-native/Libraries/Core/Devtools/symbolicateStackTrace' {
     stack: StackFrame[],
   ): Promise<{stack: StackFrame[]}>;
 }
+
+declare module 'react-native/Libraries/Components/Clipboard/Clipboard' {
+  const Clipboard: {getString(): Promise<string>; setString(content: string): void};
+  export default Clipboard;
+}

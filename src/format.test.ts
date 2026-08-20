@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 
-import {appFrames, formatFrame, isAppFrame, shortPath, type Frame} from './format.ts';
+import {
+  appFrames,
+  formatFeedback,
+  formatFrame,
+  isAppFrame,
+  previewText,
+  shortPath,
+  type Frame,
+} from './format.ts';
 
 const frame = (file: string | null, extra: Partial<Frame> = {}): Frame => ({
   name: 'C',
@@ -38,4 +46,50 @@ test('shortPath strips the Metro bundle URL and query', () => {
 test('formatFrame is greppable', () => {
   assert.equal(formatFrame(frame('/p/src/App.tsx', {name: 'Button', line: 23})), 'Button  /p/src/App.tsx:23');
   assert.equal(formatFrame(frame(null, {name: 'Button'})), 'Button');
+});
+
+test('previewText prefers text over image source, and truncates', () => {
+  assert.equal(previewText({children: 'Check Now'}), 'Check Now');
+  assert.equal(previewText({children: ['Hi, ', 'there']}), 'Hi, there');
+  assert.equal(previewText({title: 'Buy'}), 'Buy');
+  assert.equal(previewText({source: {uri: 'rateApp.png'}}), 'rateApp.png');
+  assert.equal(previewText({}), null);
+  assert.equal(previewText({children: 'x'.repeat(50)}), `${'x'.repeat(40)}...`);
+});
+
+test('formatFeedback is the agent prompt', () => {
+  const md = formatFeedback(
+    [
+      {
+        hierarchy: ['App', 'HomeLanding', 'Text'],
+        props: {children: 'Ask me any property questions'},
+        stack: [frame('http://localhost:8081/src/Home.tsx?platform=ios', {line: 60})],
+        comment: 'centre this',
+      },
+      {
+        hierarchy: ['App', 'Image'],
+        props: {},
+        stack: [],
+        comment: 'wrong asset',
+      },
+    ],
+    {width: 1278.4, height: 928},
+  );
+
+  assert.equal(
+    md,
+    [
+      '## Screen Feedback',
+      '**Viewport:** 1278×928',
+      '',
+      '### 1. Text: "Ask me any property questions"',
+      '**Location:** App › HomeLanding › Text',
+      '**Source:** src/Home.tsx:60',
+      '**Feedback:** centre this',
+      '',
+      '### 2. Image',
+      '**Location:** App › Image',
+      '**Feedback:** wrong asset',
+    ].join('\n'),
+  );
 });
