@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  Image,
   Keyboard,
   Pressable,
   ScrollView,
@@ -194,7 +195,11 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
               setAnnotations([]);
               setCopied(false);
             }}>
-            <Text style={styles.toolText}>{copied ? '✓' : '⧉'}</Text>
+            {copied ? (
+              <Text style={styles.toolText}>✓</Text>
+            ) : (
+              <Image source={require('./icons/copy.png')} style={styles.icon} />
+            )}
             {annotations.length > 0 && <Text style={styles.count}>{annotations.length}</Text>}
           </Pressable>
           <View style={styles.divider} />
@@ -209,7 +214,7 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
         </View>
       ) : (
         <Pressable style={styles.toggle} onPress={() => setActive(true)}>
-          <Text style={styles.toggleText}>◎</Text>
+          <Image source={require('./icons/logo.png')} style={styles.icon} />
         </Pressable>
       )}
     </View>
@@ -291,16 +296,11 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: 'rgba(24, 24, 24, 0.98)',
   },
-  tool: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 44,
-    height: 44,
-  },
+  tool: {alignItems: 'center', justifyContent: 'center', width: 44, height: 44},
   toolOff: {opacity: 0.35},
   toolText: {color: '#e5e5ea', fontSize: 18},
-  count: {color: '#8e8e93', fontSize: 12, marginLeft: 4},
+  icon: {width: 22, height: 22},
+  count: {position: 'absolute', top: 6, right: 4, color: '#8e8e93', fontSize: 11},
   divider: {width: 1, height: 20, marginHorizontal: 4, backgroundColor: '#3a3a3c'},
   toggle: {
     position: 'absolute',
@@ -313,7 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(17, 17, 17, 0.9)',
   },
-  toggleText: {color: '#fff', fontSize: 18},
 });
 
 function PassThrough({children}: AgentationProps): React.ReactElement {
