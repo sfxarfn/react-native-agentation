@@ -1,6 +1,6 @@
 {
   "name": "react-native-agentation",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Tap anything in a React Native app to get its component name and source file:line, for handing to AI coding agents.",
   "license": "MIT",
   "main": "src/index.ts",

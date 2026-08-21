@@ -272,6 +272,9 @@ function AgentationDev({children, onInspect}: AgentationProps): React.ReactEleme
             onChangeText={setComment}
             placeholder="What should change?"
             placeholderTextColor="#777"
+            autoComplete="off"
+            autoCorrect={false}
+            spellCheck={false}
             autoFocus
             multiline
             onSubmitEditing={save}
